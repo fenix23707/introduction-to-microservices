@@ -1,0 +1,24 @@
+server:
+  port: ${SONG_SERVICE_PORT:8080}
+  
+  
+spring:
+  config:
+    import:
+      - file:.env[.properties]
+  #      - optional:file:../.env[.properties]
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  datasource:
+    platform: postgres
+    url: jdbc:postgresql://${SONG_POSTGRES_HOST}:${SONG_POSTGRES_PORT}/${SONG_POSTGRES_DB}?sslmode=disable
+    username: ${SONG_POSTGRES_USER}
+    password: ${SONG_POSTGRES_PASSWORD}
+
+app:
+  csv-string:
+    delimiter: ${CSV_STRING_DELIMITER:,}
+    max-length: ${CSV_STRING_MAX_LENGTH:200}

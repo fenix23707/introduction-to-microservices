@@ -1,0 +1,29 @@
+version: "3"
+
+services:
+  postgres-resource:
+    image: "postgres:18.3-alpine"
+    ports:
+      - ${RESOURCE_POSTGRES_PORT}:5432
+
+    environment:
+      POSTGRES_USER: ${RESOURCE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
+
+    volumes:
+      - ./resource-db-data/:/var/lib/postgresql
+
+
+  postgres-song:
+    image: "postgres:18.3-alpine"
+    ports:
+      - ${SONG_POSTGRES_PORT}:5432
+
+    environment:
+      POSTGRES_USER: ${SONG_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SONG_POSTGRES_DB}
+
+    volumes:
+      - ./song-db-data/:/var/lib/postgresql

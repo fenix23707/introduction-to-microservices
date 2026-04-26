@@ -1,0 +1,15 @@
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+    implementation project(':common')
+
+    implementation('org.springframework.boot:spring-boot-starter-data-jpa')
+    implementation('org.springframework.boot:spring-boot-starter-webmvc')
+
+    implementation("org.apache.tika:tika-core:${apache_tika_version}")
+    implementation("org.apache.tika:tika-parsers:${apache_tika_version}")
+    implementation("org.apache.tika:tika-parsers-standard-package:${apache_tika_version}")
+
+    runtimeOnly('org.postgresql:postgresql')
+
+}
