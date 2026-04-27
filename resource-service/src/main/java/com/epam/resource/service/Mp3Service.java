@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 
 import com.epam.common.api.song.SongApi;
@@ -21,6 +22,7 @@ import com.epam.resource.repository.Mp3Repository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -101,9 +103,16 @@ public class Mp3Service {
 
     public Mp3DeleteResponse delete(String rawIdsAsCsvString) {
         var resourceIdsToDelete = idsAsCsvParser.parseRawIdsString(rawIdsAsCsvString);
+        if (CollectionUtils.isEmpty(resourceIdsToDelete)) {
+            return new Mp3DeleteResponse(Collections.emptyList());
+        }
+
         var deletedIds = mp3Repository.deleteAllByIdIn(resourceIdsToDelete);
 
-        songApi.deleteSongsMetadata(rawIdsAsCsvString);
+        if (CollectionUtils.isNotEmpty(deletedIds)) {
+            var rawDeletedIdsAsCsvString = idsAsCsvParser.toRawIdsString(deletedIds);
+            songApi.deleteSongsMetadata(rawDeletedIdsAsCsvString);
+        }
 
         return new Mp3DeleteResponse(deletedIds);
     }

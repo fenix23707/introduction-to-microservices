@@ -1,5 +1,7 @@
 package com.epam.song.service;
 
+import java.util.Collections;
+
 import com.epam.common.dto.song.CreateSongMetadataResponse;
 import com.epam.common.dto.song.DeleteSongsMetadataResponse;
 import com.epam.common.dto.song.SongMetadataDto;
@@ -58,6 +60,10 @@ public class SongService {
 
     public DeleteSongsMetadataResponse deleteSongsMetadata(String ids) {
         var parsedIds = idsAsCsvParser.parseRawIdsString(ids);
+        if (ids.isEmpty()) {
+            return new DeleteSongsMetadataResponse(Collections.emptyList());
+        }
+
         var deletedCount = songRepository.deleteByIdIn(parsedIds);
         return new DeleteSongsMetadataResponse(deletedCount);
     }
