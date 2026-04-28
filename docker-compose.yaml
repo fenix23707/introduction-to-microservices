@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   postgres-resource:
     image: "postgres:18.3-alpine"
@@ -11,8 +9,8 @@ services:
       POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
       POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
 
-    volumes:
-      - ./resource-db-data/:/var/lib/postgresql
+#    volumes:
+#      - ./resource-db-data/:/var/lib/postgresql
 
 
   postgres-song:
@@ -25,5 +23,5 @@ services:
       POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
       POSTGRES_DB: ${SONG_POSTGRES_DB}
 
-    volumes:
-      - ./song-db-data/:/var/lib/postgresql
+#    volumes:
+#      - ./song-db-data/:/var/lib/postgresql
