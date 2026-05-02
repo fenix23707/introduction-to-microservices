@@ -5,13 +5,13 @@ server:
 spring:
   config:
     import:
-      - file:.env[.properties]
+      - optional:file:.env[.properties]
   #      - optional:file:../.env[.properties]
   jpa:
     database: POSTGRESQL
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
   datasource:
     platform: postgres
     url: jdbc:postgresql://${SONG_POSTGRES_HOST}:${SONG_POSTGRES_PORT}/${SONG_POSTGRES_DB}?sslmode=disable

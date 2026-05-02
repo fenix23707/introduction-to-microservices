@@ -1,4 +1,19 @@
 services:
+  resource-service:
+    build:
+      context: .
+      dockerfile: resource-service/Dockerfile
+    environment:
+      RESOURCE_POSTGRES_HOST: postgres-resource
+      RESOURCE_POSTGRES_PORT: 5432
+      RESOURCE_POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
+      RESOURCE_POSTGRES_USER: ${RESOURCE_POSTGRES_USER}
+      RESOURCE_POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+      SONG_SERVICE_HOST: song-service
+      SONG_SERVICE_PORT: 8080
+    ports:
+      - ${RESOURCE_SERVICE_PORT}:8080
+
   postgres-resource:
     image: "postgres:18.3-alpine"
     ports:
@@ -9,9 +24,22 @@ services:
       POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
       POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
 
-#    volumes:
+    volumes:
+      - ./init-scripts/resource-db/:/docker-entrypoint-initdb.d/
 #      - ./resource-db-data/:/var/lib/postgresql
 
+  song-service:
+    build:
+      context: .
+      dockerfile: song-service/Dockerfile
+    environment:
+      SONG_POSTGRES_HOST: postgres-song
+      SONG_POSTGRES_PORT: 5432
+      SONG_POSTGRES_DB: ${SONG_POSTGRES_DB}
+      SONG_POSTGRES_USER: ${SONG_POSTGRES_USER}
+      SONG_POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
+    ports:
+      - ${SONG_SERVICE_PORT}:8080
 
   postgres-song:
     image: "postgres:18.3-alpine"
@@ -23,5 +51,6 @@ services:
       POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
       POSTGRES_DB: ${SONG_POSTGRES_DB}
 
-#    volumes:
+    volumes:
+      - ./init-scripts/song-db/:/docker-entrypoint-initdb.d/
 #      - ./song-db-data/:/var/lib/postgresql

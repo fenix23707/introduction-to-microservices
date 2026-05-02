@@ -1,13 +1,13 @@
 spring:
   config:
     import:
-      - file:.env[.properties]
+      - optional:file:.env[.properties]
 #      - optional:file:../.env[.properties]
   jpa:
     database: POSTGRESQL
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
   datasource:
     platform: postgres
     url: jdbc:postgresql://${RESOURCE_POSTGRES_HOST}:${RESOURCE_POSTGRES_PORT}/${RESOURCE_POSTGRES_DB}?sslmode=disable
