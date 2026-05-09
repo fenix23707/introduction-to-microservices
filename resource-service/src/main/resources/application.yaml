@@ -1,4 +1,8 @@
+server:
+  port: ${RESOURCE_SERVICE_PORT:8080}
 spring:
+  application:
+    name: resource-service
   config:
     import:
       - optional:file:.env[.properties]
@@ -19,10 +23,20 @@ spring:
       service:
         group:
           song:
-            base-url: http://${SONG_SERVICE_HOST}:${SONG_SERVICE_PORT}
+            base-url: http://song-service
   jackson:
     stream-write-features:
       write-numbers-as-strings: true
+
+eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 5
+  client:
+    registry-fetch-interval-seconds: 5
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+
 app:
   csv-string:
     delimiter: ${CSV_STRING_DELIMITER:,}

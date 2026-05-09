@@ -5,7 +5,6 @@ WORKDIR /app
 COPY gradle gradle
 COPY build.gradle settings.gradle gradle.properties gradlew ./
 COPY song-service/build.gradle song-service/
-COPY resource-service/build.gradle resource-service/
 RUN ./gradlew :song-service:dependencies --no-daemon
 
 COPY song-service/src song-service/src

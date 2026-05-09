@@ -1,3 +1,13 @@
 rootProject.name = 'microservices'
-include 'resource-service'
-include 'song-service'
+
+def modules = [
+    'resource-service',
+    'song-service',
+    'service-registry'
+]
+
+modules.each { moduleName ->
+    if (file(moduleName).exists()) {
+        include(moduleName)
+    }
+}

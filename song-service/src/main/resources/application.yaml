@@ -1,8 +1,8 @@
 server:
   port: ${SONG_SERVICE_PORT:8080}
-  
-  
 spring:
+  application:
+    name: song-service
   config:
     import:
       - optional:file:.env[.properties]
@@ -17,8 +17,16 @@ spring:
     url: jdbc:postgresql://${SONG_POSTGRES_HOST}:${SONG_POSTGRES_PORT}/${SONG_POSTGRES_DB}?sslmode=disable
     username: ${SONG_POSTGRES_USER}
     password: ${SONG_POSTGRES_PASSWORD}
+eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 5
+  client:
+    registry-fetch-interval-seconds: 5
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
 
 app:
   csv-string:
     delimiter: ${CSV_STRING_DELIMITER:,}
     max-length: ${CSV_STRING_MAX_LENGTH:200}
+
