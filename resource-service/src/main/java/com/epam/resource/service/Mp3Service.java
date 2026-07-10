@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ import com.epam.common.jackson.MmSsDurationSerializer;
 import com.epam.common.service.IdsAsCsvParser;
 import com.epam.resource.dto.Mp3DeleteResponse;
 import com.epam.resource.dto.Mp3UploadResponse;
+import com.epam.resource.dto.S3Path;
 import com.epam.resource.entity.Mp3Entity;
 import com.epam.resource.exception.InvalidResourceIdException;
 import com.epam.resource.exception.Mp3FileParseException;
@@ -23,6 +25,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -40,19 +43,28 @@ public class Mp3Service {
     private final IdsAsCsvParser idsAsCsvParser;
     private final SongApi songApi;
     private final Mp3Parser parser;
+    private final Mp3FileStorage fileStorage;
 
     @SneakyThrows
     @Transactional
     public Mp3UploadResponse upload(@NonNull InputStream mp3File) {
         var bytes = mp3File.readAllBytes();
-        var entity = new Mp3Entity().setFileData(bytes);
-        mp3Repository.save(entity);
-        var fileId = entity.getId();
 
-        var songMetadataDto = parseSongMetadata(fileId, bytes);
+        if (ArrayUtils.isEmpty(bytes)) {
+            throw new Mp3FileParseException("Input stream is empty");
+        }
+
+        var path = fileStorage.save(bytes);
+
+        var entity = new Mp3Entity()
+            .setBucket(path.bucket())
+            .setObjectKey(path.key());
+        mp3Repository.save(entity);
+
+        var songMetadataDto = parseSongMetadata(entity.getId(), bytes);
         songApi.createSongMetadata(songMetadataDto);
 
-        return new Mp3UploadResponse(fileId);
+        return new Mp3UploadResponse(entity.getId());
     }
 
     private SongMetadataDto parseSongMetadata(Long fileId, byte[] bytes) throws IOException, SAXException {
@@ -88,9 +100,11 @@ public class Mp3Service {
             throw new InvalidResourceIdException(id, "Must be a positive integer");
         }
 
-        return mp3Repository.findById(id)
-            .map(Mp3Entity::getFileData)
+        var path = mp3Repository.findById(id)
+            .map(S3Path::fromEntity)
             .orElseThrow(() -> new ResourceNotFoundException(id));
+
+        return fileStorage.getByPath(path);
     }
 
     private static long parseRawId(String id) {
@@ -107,8 +121,12 @@ public class Mp3Service {
             return new Mp3DeleteResponse(Collections.emptyList());
         }
 
-        var deletedIds = mp3Repository.deleteAllByIdIn(resourceIdsToDelete);
+        var deletedEntities = mp3Repository.deleteAllByIdIn(resourceIdsToDelete);
+        fileStorage.deleteAll(deletedEntities.stream().map(S3Path::fromEntity).toList());
 
+        var deletedIds = deletedEntities.stream()
+            .map(Mp3Entity::getId)
+            .toList();
         if (CollectionUtils.isNotEmpty(deletedIds)) {
             var rawDeletedIdsAsCsvString = idsAsCsvParser.toRawIdsString(deletedIds);
             songApi.deleteSongsMetadata(rawDeletedIdsAsCsvString);

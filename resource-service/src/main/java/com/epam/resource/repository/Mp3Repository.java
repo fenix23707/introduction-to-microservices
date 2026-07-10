@@ -14,6 +14,6 @@ import org.springframework.stereotype.Repository;
 public interface Mp3Repository extends JpaRepository<Mp3Entity, Long> {
 
     @Modifying
-    @Query(value = "DELETE FROM mp3_files WHERE id IN :ids RETURNING id", nativeQuery = true)
-    List<Long> deleteAllByIdIn(@Param("ids") List<Long> ids);
+    @Query(value = "DELETE FROM mp3_files WHERE id IN :ids RETURNING *", nativeQuery = true)
+    List<Mp3Entity> deleteAllByIdIn(@Param("ids") List<Long> ids);
 }

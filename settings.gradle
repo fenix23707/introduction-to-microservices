@@ -3,7 +3,8 @@ rootProject.name = 'microservices'
 def modules = [
     'resource-service',
     'song-service',
-    'service-registry'
+    'service-registry',
+    'resource-processor'
 ]
 
 modules.each { moduleName ->
