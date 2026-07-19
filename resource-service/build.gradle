@@ -4,6 +4,7 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     implementation('org.springframework.boot:spring-boot-starter-webmvc')
     implementation('org.springframework.cloud:spring-cloud-starter-netflix-eureka-client')
+    implementation('org.springframework.boot:spring-boot-starter-kafka')
 
     implementation('software.amazon.awssdk:s3')
 
@@ -12,5 +13,4 @@ dependencies {
     implementation("org.apache.tika:tika-parsers-standard-package:${apache_tika_version}")
 
     runtimeOnly('org.postgresql:postgresql')
-
 }

@@ -1,10 +1,18 @@
 package com.epam.resource.processor.config;
 
+import com.epam.common.api.resource.ResourceApi;
+import com.epam.common.api.song.SongApi;
+
 import org.apache.tika.parser.mp3.Mp3Parser;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.service.registry.ImportHttpServices;
 
 @Configuration
+@ImportHttpServices(group = "song", types = SongApi.class)
+@ImportHttpServices(group = "resource", types = ResourceApi.class)
+@EnableDiscoveryClient
 public class AppConfig {
 
     @Bean

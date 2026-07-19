@@ -6,6 +6,7 @@ import com.epam.resource.dto.Mp3DeleteResponse;
 import com.epam.resource.dto.Mp3UploadResponse;
 import com.epam.resource.service.Mp3Service;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class Mp3Controller {
     private final Mp3Service mp3Service;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = {"audio/mpeg", "audio/mpeg;charset=UTF-8"})
-    public ResponseEntity<Mp3UploadResponse> uploadMp3(InputStream mp3File) {
+    public ResponseEntity<@NonNull Mp3UploadResponse> uploadMp3(InputStream mp3File) {
         return ResponseEntity.ok(mp3Service.upload(mp3File));
     }
 
@@ -35,7 +36,7 @@ public class Mp3Controller {
     }
 
     @DeleteMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Mp3DeleteResponse> deleteMp3(@RequestParam String id) {
+    public ResponseEntity<@NonNull Mp3DeleteResponse> deleteMp3(@RequestParam String id) {
         return ResponseEntity.ok(mp3Service.delete(id));
     }
 }

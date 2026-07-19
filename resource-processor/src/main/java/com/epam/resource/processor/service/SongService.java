@@ -5,33 +5,50 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 
+import com.epam.common.api.resource.ResourceApi;
+import com.epam.common.api.song.SongApi;
+import com.epam.common.dto.kafka.ResourceUploadEvent;
 import com.epam.common.dto.song.SongMetadataDto;
 import com.epam.resource.processor.exception.Mp3FileParseException;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp3.Mp3Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
 @RequiredArgsConstructor
 @Service
-public class Mp3Service {
+public class SongService {
 
     @NonNull
     private final Mp3Parser parser;
+    @NonNull
+    private final ResourceApi resourceApi;
+    @NonNull
+    private final SongApi songApi;
 
-    private SongMetadataDto parseSongMetadata(Long fileId, byte[] bytes) throws IOException, SAXException {
+    @KafkaListener(topics = "${application.kafka.topic.song.name}", groupId = "${spring.application.name}")
+    public void handleSongUploadEvent(ResourceUploadEvent event) {
+        var bytes = resourceApi.downloadMp3(String.valueOf(event.resourceId())).getBody();
+        var metadata = parseSongMetadata(event.resourceId(), bytes);
+        songApi.createSongMetadata(metadata);
+    }
+
+    @SneakyThrows
+    private SongMetadataDto parseSongMetadata(Long fileId, byte[] bytes) {
         try {
-            BodyContentHandler handler = new BodyContentHandler(-1);
-            Metadata metadata = new Metadata();
-            ParseContext pcontext = new ParseContext();
+            var handler = new BodyContentHandler(-1);
+            var metadata = new Metadata();
+            var parseContext = new ParseContext();
 
-            parser.parse(new ByteArrayInputStream(bytes), handler, metadata, pcontext);
+            parser.parse(new ByteArrayInputStream(bytes), handler, metadata, parseContext);
 
             var duration = Optional.ofNullable(metadata.get("xmpDM:duration"))
                 .map(Double::parseDouble)
@@ -46,7 +63,7 @@ public class Mp3Service {
                 .duration(duration)
                 .year(metadata.get("xmpDM:releaseDate"))
                 .build();
-        } catch (NumberFormatException | TikaException ex) {
+        } catch (NumberFormatException | TikaException | IOException | SAXException ex) {
             throw new Mp3FileParseException(ex.getMessage());
         }
     }
