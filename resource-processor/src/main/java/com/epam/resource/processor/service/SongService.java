@@ -19,6 +19,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp3.Mp3Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
@@ -33,12 +34,15 @@ public class SongService {
     private final ResourceApi resourceApi;
     @NonNull
     private final SongApi songApi;
+    @NonNull
+    private final RetryTemplate httpRetryTemplate;
 
     @KafkaListener(topics = "${application.kafka.topic.song.name}", groupId = "${spring.application.name}")
+    @SneakyThrows
     public void handleSongUploadEvent(ResourceUploadEvent event) {
-        var bytes = resourceApi.downloadMp3(String.valueOf(event.resourceId())).getBody();
+        var bytes = httpRetryTemplate.execute(() -> resourceApi.downloadMp3(String.valueOf(event.resourceId())).getBody());
         var metadata = parseSongMetadata(event.resourceId(), bytes);
-        songApi.createSongMetadata(metadata);
+        httpRetryTemplate.execute(() -> songApi.createSongMetadata(metadata));
     }
 
     @SneakyThrows

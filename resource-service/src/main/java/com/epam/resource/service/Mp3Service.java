@@ -22,6 +22,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tika.Tika;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +43,10 @@ public class Mp3Service {
     private final KafkaTemplate<@NonNull String, @NonNull ResourceUploadEvent> kafkaTemplate;
     @NonNull
     private final KafkaSongProperties kafkaSongProperties;
+    @NonNull
+    private final RetryTemplate kafkaRetryTemplate;
+    @NonNull
+    private final RetryTemplate httpRetryTemplate;
 
     @SneakyThrows
     @Transactional
@@ -57,7 +62,7 @@ public class Mp3Service {
             .setObjectKey(path.key());
         mp3Repository.save(entity);
 
-        kafkaTemplate.send(kafkaSongProperties.getName(), new ResourceUploadEvent(entity.getId()));
+        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(kafkaSongProperties.getName(), new ResourceUploadEvent(entity.getId())));
 
         return new Mp3UploadResponse(entity.getId());
     }
@@ -96,6 +101,7 @@ public class Mp3Service {
         }
     }
 
+    @SneakyThrows
     public Mp3DeleteResponse delete(String rawIdsAsCsvString) {
         var resourceIdsToDelete = idsAsCsvParser.parseRawIdsString(rawIdsAsCsvString);
         if (CollectionUtils.isEmpty(resourceIdsToDelete)) {
@@ -110,7 +116,7 @@ public class Mp3Service {
             .toList();
         if (CollectionUtils.isNotEmpty(deletedIds)) {
             var rawDeletedIdsAsCsvString = idsAsCsvParser.toRawIdsString(deletedIds);
-            songApi.deleteSongsMetadata(rawDeletedIdsAsCsvString);
+            httpRetryTemplate.execute(() -> songApi.deleteSongsMetadata(rawDeletedIdsAsCsvString));
         }
 
         return new Mp3DeleteResponse(deletedIds);
