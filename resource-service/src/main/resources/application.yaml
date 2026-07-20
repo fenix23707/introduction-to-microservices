@@ -42,6 +42,13 @@ app:
     delimiter: ${CSV_STRING_DELIMITER:,}
     max-length: ${CSV_STRING_MAX_LENGTH:200}
 
+aws:
+  s3:
+    access-key: ${RESOURCE_SERVICE_AWS_S3_ACCESS_KEY}
+    secret-key: ${RESOURCE_SERVICE_AWS_S3_SECRET_KEY}
+    endpoint: ${RESOURCE_SERVICE_AWS_S3_ENDPOINT:http://localhost:4566}
+    region: ${RESOURCE_SERVICE_AWS_S3_REGION:us-east-1}
+    bucket-name: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
 
 logging:
   level:

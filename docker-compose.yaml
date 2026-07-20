@@ -9,7 +9,14 @@ services:
       RESOURCE_POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
       RESOURCE_POSTGRES_USER: ${RESOURCE_POSTGRES_USER}
       RESOURCE_POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
+
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
+
+      RESOURCE_SERVICE_AWS_S3_ENDPOINT: http://localstack:4566
+      RESOURCE_SERVICE_AWS_S3_BUCKET_NAME: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
+      RESOURCE_SERVICE_AWS_S3_ACCESS_KEY: ${RESOURCE_SERVICE_AWS_S3_ACCESS_KEY}
+      RESOURCE_SERVICE_AWS_S3_SECRET_KEY: ${RESOURCE_SERVICE_AWS_S3_SECRET_KEY}
+      RESOURCE_SERVICE_AWS_S3_REGION: ${RESOURCE_SERVICE_AWS_S3_REGION}
     ports:
       - ${RESOURCE_SERVICE_PORT}:8080
 
@@ -26,6 +33,20 @@ services:
     volumes:
       - ./init-scripts/resource-db/:/docker-entrypoint-initdb.d/
 #      - ./resource-db-data/:/var/lib/postgresql
+
+  localstack:
+    image: localstack/localstack:community-archive
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      AWS_ACCESS_KEY_ID: ${RESOURCE_SERVICE_AWS_S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${RESOURCE_SERVICE_AWS_S3_SECRET_KEY}
+      AWS_DEFAULT_REGION: ${RESOURCE_SERVICE_AWS_S3_REGION}
+      RESOURCE_SERVICE_AWS_S3_BUCKET_NAME: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
+    volumes:
+#      - ./localstack_data:/var/lib/localstack
+      - ./init-scripts:/etc/localstack/init/ready.d
 
   song-service:
     build:
