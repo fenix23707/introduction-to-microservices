@@ -13,4 +13,11 @@ dependencies {
     implementation("org.apache.tika:tika-parsers-standard-package:${apache_tika_version}")
 
     runtimeOnly('org.postgresql:postgresql')
+
+
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.assertj:assertj-core")
+    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito:mockito-junit-jupiter")
+
 }
