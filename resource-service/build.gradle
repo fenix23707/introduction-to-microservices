@@ -17,7 +17,6 @@ sourceSets {
             runtimeClasspath += main.output
             srcDir file('src/componentTest/java')
         }
-        resources.srcDir file('src/componentTest/resources')
     }
 }
 
@@ -46,7 +45,9 @@ tasks.register('componentTest', Test) {
     testClassesDirs = sourceSets.componentTest.output.classesDirs
     classpath = sourceSets.componentTest.runtimeClasspath
 
-    useJUnitPlatform()
+    useJUnitPlatform {
+        includeEngines 'junit-platform-suite'
+    }
     shouldRunAfter tasks.named('test')
 }
 
