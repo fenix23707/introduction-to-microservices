@@ -28,6 +28,13 @@ spring:
     stream-write-features:
       write-numbers-as-strings: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 eureka:
   instance:
     lease-renewal-interval-in-seconds: 5
@@ -50,6 +57,16 @@ aws:
     region: ${RESOURCE_SERVICE_AWS_S3_REGION:us-east-1}
     bucket-name: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
 
+application:
+  kafka:
+    topic:
+      song:
+        name: ${KAFKA_TOPIC_SONG_NAME:songs}
+
 logging:
   level:
     org.springframework.boot.context.config: DEBUG
+    org.springframework.retry: DEBUG
+    org.springframework.core.retry: DEBUG
+    org.springframework.resilience: TRACE
+    org.springframework.kafka: DEBUG

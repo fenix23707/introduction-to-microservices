@@ -1,20 +1,15 @@
 package com.epam.resource.service;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Optional;
 
 import com.epam.common.api.song.SongApi;
-import com.epam.common.dto.song.SongMetadataDto;
-import com.epam.common.jackson.MmSsDurationSerializer;
 import com.epam.common.service.IdsAsCsvParser;
+import com.epam.resource.config.property.KafkaSongProperties;
 import com.epam.resource.dto.Mp3DeleteResponse;
 import com.epam.resource.dto.Mp3UploadResponse;
 import com.epam.resource.dto.S3Path;
+import com.epam.resource.dto.kafka.ResourceUploadEvent;
 import com.epam.resource.entity.Mp3Entity;
 import com.epam.resource.exception.InvalidResourceIdException;
 import com.epam.resource.exception.Mp3FileParseException;
@@ -26,33 +21,39 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.mp3.Mp3Parser;
-import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.Tika;
+import org.springframework.core.retry.RetryTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.xml.sax.SAXException;
 
 @RequiredArgsConstructor
 @Service
 public class Mp3Service {
 
+    @NonNull
     private final Mp3Repository mp3Repository;
+    @NonNull
     private final IdsAsCsvParser idsAsCsvParser;
+    @NonNull
     private final SongApi songApi;
-    private final Mp3Parser parser;
+    @NonNull
     private final Mp3FileStorage fileStorage;
+    @NonNull
+    private final KafkaTemplate<@NonNull String, @NonNull ResourceUploadEvent> kafkaTemplate;
+    @NonNull
+    private final KafkaSongProperties kafkaSongProperties;
+    @NonNull
+    private final RetryTemplate kafkaRetryTemplate;
+    @NonNull
+    private final RetryTemplate httpRetryTemplate;
 
     @SneakyThrows
     @Transactional
     public Mp3UploadResponse upload(@NonNull InputStream mp3File) {
         var bytes = mp3File.readAllBytes();
 
-        if (ArrayUtils.isEmpty(bytes)) {
-            throw new Mp3FileParseException("Input stream is empty");
-        }
+        verifyMp3File(bytes);
 
         var path = fileStorage.save(bytes);
 
@@ -61,35 +62,20 @@ public class Mp3Service {
             .setObjectKey(path.key());
         mp3Repository.save(entity);
 
-        var songMetadataDto = parseSongMetadata(entity.getId(), bytes);
-        songApi.createSongMetadata(songMetadataDto);
+        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(kafkaSongProperties.getName(), new ResourceUploadEvent(entity.getId())));
 
         return new Mp3UploadResponse(entity.getId());
     }
 
-    private SongMetadataDto parseSongMetadata(Long fileId, byte[] bytes) throws IOException, SAXException {
-        try {
-            BodyContentHandler handler = new BodyContentHandler(-1);
-            Metadata metadata = new Metadata();
-            ParseContext pcontext = new ParseContext();
+    public void verifyMp3File(byte[] bytes) {
+        if (ArrayUtils.isEmpty(bytes)) {
+            throw new Mp3FileParseException("Input stream is empty");
+        }
 
-            parser.parse(new ByteArrayInputStream(bytes), handler, metadata, pcontext);
-
-            var duration = Optional.ofNullable(metadata.get("xmpDM:duration"))
-                .map(Double::parseDouble)
-                .map(d -> Duration.ofSeconds((long) d.doubleValue()))
-                .map(MmSsDurationSerializer::toMmSsString)
-                .orElse(null);
-            return SongMetadataDto.builder()
-                .id(fileId)
-                .name(metadata.get("dc:title"))
-                .album(metadata.get("xmpDM:album"))
-                .artist(metadata.get("xmpDM:artist"))
-                .duration(duration)
-                .year(metadata.get("xmpDM:releaseDate"))
-                .build();
-        } catch (NumberFormatException | TikaException ex) {
-            throw new Mp3FileParseException(ex.getMessage());
+        var tika = new Tika();
+        var mimeType = tika.detect(bytes);
+        if (!"audio/mpeg".equals(mimeType)) {
+            throw new Mp3FileParseException("Invalid file type: " + mimeType + ". Expected audio/mpeg");
         }
     }
 
@@ -115,6 +101,7 @@ public class Mp3Service {
         }
     }
 
+    @SneakyThrows
     public Mp3DeleteResponse delete(String rawIdsAsCsvString) {
         var resourceIdsToDelete = idsAsCsvParser.parseRawIdsString(rawIdsAsCsvString);
         if (CollectionUtils.isEmpty(resourceIdsToDelete)) {
@@ -129,7 +116,7 @@ public class Mp3Service {
             .toList();
         if (CollectionUtils.isNotEmpty(deletedIds)) {
             var rawDeletedIdsAsCsvString = idsAsCsvParser.toRawIdsString(deletedIds);
-            songApi.deleteSongsMetadata(rawDeletedIdsAsCsvString);
+            httpRetryTemplate.execute(() -> songApi.deleteSongsMetadata(rawDeletedIdsAsCsvString));
         }
 
         return new Mp3DeleteResponse(deletedIds);

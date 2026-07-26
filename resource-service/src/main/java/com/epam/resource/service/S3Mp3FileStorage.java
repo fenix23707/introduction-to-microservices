@@ -14,10 +14,12 @@ import com.epam.resource.exception.storage.FileStorageDeleteException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Slf4j
 @Service
@@ -34,6 +36,7 @@ public class S3Mp3FileStorage implements Mp3FileStorage {
     }
 
     @Override
+    @Retryable(includes = S3Exception.class, multiplier = 2)
     public S3Path save(byte[] bytes) {
         var key = UUID.randomUUID();
         var body = RequestBody.fromBytes(bytes);
@@ -44,12 +47,14 @@ public class S3Mp3FileStorage implements Mp3FileStorage {
 
     @SneakyThrows
     @Override
+    @Retryable(includes = S3Exception.class, multiplier = 2)
     public byte[] getByPath(S3Path path) {
         return s3Client.getObject(builder -> builder.bucket(path.bucket()).key(path.key().toString()))
             .readAllBytes();
     }
 
     @Override
+    @Retryable(includes = S3Exception.class, multiplier = 2)
     public void deleteAll(List<S3Path> paths) {
         var identifiersByBucket = paths.stream()
             .collect(groupingBy(S3Path::bucket, mapping(this::toObjectIdentifier, toList())));
