@@ -1,5 +1,6 @@
 apply plugin: 'org.springframework.boot'
-
+apply plugin: 'org.springframework.cloud.contract'
+apply plugin: 'maven-publish'
 
 
 sourceSets {
@@ -8,6 +9,14 @@ sourceSets {
             compileClasspath += main.output
             runtimeClasspath += main.output
             srcDir file('src/integrationTest/java')
+        }
+    }
+
+    contractTest {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+            srcDir file('src/contractTest/java')
         }
     }
 
@@ -24,6 +33,9 @@ configurations {
     integrationTestImplementation.extendsFrom testImplementation
     integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
 
+    contractTestImplementation.extendsFrom testImplementation
+    contractTestRuntimeOnly.extendsFrom testRuntimeOnly
+
     componentTestImplementation.extendsFrom testImplementation
     componentTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
@@ -34,6 +46,16 @@ tasks.register('integrationTest', Test) {
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
+
+    useJUnitPlatform()
+}
+
+tasks.named('contractTest', Test) {
+    description = 'Runs contract tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.contractTest.output.classesDirs
+    classpath = sourceSets.contractTest.runtimeClasspath
 
     useJUnitPlatform()
 }
@@ -55,8 +77,28 @@ idea {
     module {
         testSources.from(project.sourceSets.integrationTest.java.srcDirs)
         testSources.from(project.sourceSets.integrationTest.resources.srcDirs)
+        testSources.from(project.sourceSets.contractTest.java.srcDirs)
+        testSources.from(project.sourceSets.contractTest.resources.srcDirs)
         testSources.from(project.sourceSets.componentTest.java.srcDirs)
         testSources.from(project.sourceSets.componentTest.resources.srcDirs)
+    }
+}
+
+contracts {
+    testFramework = 'JUNIT5'
+    baseClassMappings {
+        baseClassMapping(".*http.*", "com.epam.resources.HttpBaseContractTest")
+    }
+}
+
+publishing {
+    publications {
+        stubs(MavenPublication) {
+            artifact verifierStubsJar
+        }
+    }
+    repositories {
+        mavenLocal()
     }
 }
 
@@ -105,4 +147,9 @@ dependencies {
     componentTestImplementation 'io.cucumber:cucumber-spring:7.18.0'
     componentTestImplementation 'io.cucumber:cucumber-junit-platform-engine:7.18.0'
     componentTestImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
+}
+
+dependencies {
+    contractTestImplementation('org.springframework.cloud:spring-cloud-starter-contract-verifier')
+    contractTestImplementation('org.springframework.boot:spring-boot-starter-webmvc-test')
 }
