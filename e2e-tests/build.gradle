@@ -1,0 +1,18 @@
+dependencies {
+    testImplementation('org.springframework.boot:spring-boot-starter')
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+    testImplementation('org.springframework.boot:spring-boot-starter-restclient')
+
+    testImplementation("io.cucumber:cucumber-java:${cucumber_version}")
+    testImplementation("io.cucumber:cucumber-spring:${cucumber_version}")
+    testImplementation("io.cucumber:cucumber-junit-platform-engine:${cucumber_version}")
+    testImplementation("org.junit.platform:junit-platform-suite:${junit_platform_suite_version}")
+}
+
+tasks.named('test') {
+    description = 'Runs the E2E (Cucumber) suite against already running platform services.'
+
+    useJUnitPlatform {
+        includeEngines 'junit-platform-suite'
+    }
+}

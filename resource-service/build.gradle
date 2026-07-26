@@ -143,10 +143,10 @@ dependencies {
 dependencies {
     componentTestImplementation('org.springframework.boot:spring-boot-starter-webmvc-test')
 
-    componentTestImplementation 'io.cucumber:cucumber-java:7.18.0'
-    componentTestImplementation 'io.cucumber:cucumber-spring:7.18.0'
-    componentTestImplementation 'io.cucumber:cucumber-junit-platform-engine:7.18.0'
-    componentTestImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
+    componentTestImplementation("io.cucumber:cucumber-java:${cucumber_version}")
+    componentTestImplementation("io.cucumber:cucumber-spring:${cucumber_version}")
+    componentTestImplementation("io.cucumber:cucumber-junit-platform-engine:${cucumber_version}")
+    componentTestImplementation("org.junit.platform:junit-platform-suite:${junit_platform_suite_version}")
 }
 
 dependencies {

@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: e2e-tests
+  main:
+    web-application-type: none
+    banner-mode: off
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+
+e2e:
+  resource-service:
+    base-url: ${E2E_RESOURCE_SERVICE_BASE_URL:http://localhost:${RESOURCE_SERVICE_PORT:8080}}
+  song-service:
+    base-url: ${E2E_SONG_SERVICE_BASE_URL:http://localhost:8082}
+
+logging:
+  level:
+    root: WARN
+    com.epam.e2e: INFO
