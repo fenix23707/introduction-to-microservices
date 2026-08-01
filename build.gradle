@@ -4,6 +4,7 @@ plugins {
 	id 'java'
 	id 'io.spring.dependency-management' version '1.1.7' apply false
 	id 'org.springframework.boot' version '4.0.5' apply false
+	id 'org.springframework.cloud.contract' version '5.0.3' apply false
 }
 
 
@@ -20,6 +21,7 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'idea'
 
     java {
         toolchain {
@@ -32,6 +34,7 @@ subprojects {
             mavenBom SpringBootPlugin.BOM_COORDINATES
             mavenBom "org.springframework.cloud:spring-cloud-dependencies:${spring_cloud_version}"
             mavenBom "software.amazon.awssdk:bom:${aws_version}"
+            mavenBom "org.testcontainers:testcontainers-bom:${test_containers_core_version}"
         }
     }
 
@@ -41,6 +44,10 @@ subprojects {
 
         compileOnly('org.projectlombok:lombok')
         annotationProcessor('org.projectlombok:lombok')
+
+        testImplementation("org.assertj:assertj-core:${assertj_version}")
+        testImplementation("org.junit.jupiter:junit-jupiter:${junit_version}")
+        testRuntimeOnly('org.junit.platform:junit-platform-launcher')
 
     }
 
