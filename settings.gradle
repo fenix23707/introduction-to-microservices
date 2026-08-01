@@ -4,7 +4,8 @@ def modules = [
     'resource-service',
     'song-service',
     'service-registry',
-    'resource-processor'
+    'resource-processor',
+    'e2e-tests'
 ]
 
 modules.each { moduleName ->

@@ -30,9 +30,11 @@ public class Mp3Controller {
         return ResponseEntity.ok(mp3Service.upload(mp3File));
     }
 
-    @GetMapping(value = "/{id}", produces = "audio/mpeg")
+    @GetMapping(value = "/{id}")
     public ResponseEntity<byte[]> downloadMp3(@PathVariable String id) {
-        return ResponseEntity.ok(mp3Service.download(id));
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("audio/mpeg"))
+            .body(mp3Service.download(id));
     }
 
     @DeleteMapping(produces = MediaType.APPLICATION_JSON_VALUE)

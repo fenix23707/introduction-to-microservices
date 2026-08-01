@@ -1,4 +1,107 @@
 apply plugin: 'org.springframework.boot'
+apply plugin: 'org.springframework.cloud.contract'
+apply plugin: 'maven-publish'
+
+
+sourceSets {
+    integrationTest {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+            srcDir file('src/integrationTest/java')
+        }
+    }
+
+    contractTest {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+            srcDir file('src/contractTest/java')
+        }
+    }
+
+    componentTest {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+            srcDir file('src/componentTest/java')
+        }
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+
+    contractTestImplementation.extendsFrom testImplementation
+    contractTestRuntimeOnly.extendsFrom testRuntimeOnly
+
+    componentTestImplementation.extendsFrom testImplementation
+    componentTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    useJUnitPlatform()
+}
+
+tasks.named('contractTest', Test) {
+    description = 'Runs contract tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.contractTest.output.classesDirs
+    classpath = sourceSets.contractTest.runtimeClasspath
+
+    useJUnitPlatform()
+}
+
+tasks.register('componentTest', Test) {
+    description = 'Runs component tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.componentTest.output.classesDirs
+    classpath = sourceSets.componentTest.runtimeClasspath
+
+    useJUnitPlatform {
+        includeEngines 'junit-platform-suite'
+    }
+    shouldRunAfter tasks.named('test')
+}
+
+idea {
+    module {
+        testSources.from(project.sourceSets.integrationTest.java.srcDirs)
+        testSources.from(project.sourceSets.integrationTest.resources.srcDirs)
+        testSources.from(project.sourceSets.contractTest.java.srcDirs)
+        testSources.from(project.sourceSets.contractTest.resources.srcDirs)
+        testSources.from(project.sourceSets.componentTest.java.srcDirs)
+        testSources.from(project.sourceSets.componentTest.resources.srcDirs)
+    }
+}
+
+contracts {
+    testFramework = 'JUNIT5'
+    baseClassMappings {
+        baseClassMapping(".*http.*", "com.epam.resources.HttpBaseContractTest")
+    }
+}
+
+publishing {
+    publications {
+        stubs(MavenPublication) {
+            artifact verifierStubsJar
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
+
 
 dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
@@ -14,4 +117,40 @@ dependencies {
     implementation("org.apache.tika:tika-parsers-standard-package:${apache_tika_version}")
 
     runtimeOnly('org.postgresql:postgresql')
+
+   }
+
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.assertj:assertj-core")
+    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito:mockito-junit-jupiter")
+
+}
+
+dependencies {
+    integrationTestImplementation('org.springframework.boot:spring-boot-starter-webmvc-test')
+    integrationTestImplementation('org.springframework.kafka:spring-kafka-test')
+
+    integrationTestImplementation("org.springframework.boot:spring-boot-testcontainers")
+    integrationTestImplementation("org.testcontainers:testcontainers")
+    integrationTestImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    integrationTestImplementation("org.testcontainers:testcontainers-postgresql")
+    integrationTestImplementation("org.testcontainers:testcontainers-localstack")
+    integrationTestImplementation('org.testcontainers:testcontainers-kafka')
+}
+
+
+dependencies {
+    componentTestImplementation('org.springframework.boot:spring-boot-starter-webmvc-test')
+
+    componentTestImplementation("io.cucumber:cucumber-java:${cucumber_version}")
+    componentTestImplementation("io.cucumber:cucumber-spring:${cucumber_version}")
+    componentTestImplementation("io.cucumber:cucumber-junit-platform-engine:${cucumber_version}")
+    componentTestImplementation("org.junit.platform:junit-platform-suite:${junit_platform_suite_version}")
+}
+
+dependencies {
+    contractTestImplementation('org.springframework.cloud:spring-cloud-starter-contract-verifier')
+    contractTestImplementation('org.springframework.boot:spring-boot-starter-webmvc-test')
 }
