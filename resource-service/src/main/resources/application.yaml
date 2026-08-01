@@ -63,6 +63,16 @@ application:
       song:
         name: ${KAFKA_TOPIC_SONG_NAME:songs}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
 logging:
   level:
     org.springframework.boot.context.config: DEBUG

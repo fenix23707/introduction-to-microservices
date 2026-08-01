@@ -13,6 +13,8 @@ RUN ./gradlew :resource-service:assemble --no-daemon -x test -Dorg.gradle.jvmarg
 
 FROM eclipse-temurin:25-jre-alpine-3.23 as run
 
+RUN apk add --no-cache curl
+
 WORKDIR /app
 COPY --from=build  /app/resource-service/build/libs/*.jar app.jar
 

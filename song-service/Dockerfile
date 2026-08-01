@@ -12,6 +12,8 @@ RUN ./gradlew :song-service:assemble --no-daemon -x test -Dorg.gradle.jvmargs="-
 
 FROM eclipse-temurin:25-jre-alpine-3.23 as run
 
+RUN apk add --no-cache curl
+
 WORKDIR /app
 COPY --from=build  /app/song-service/build/libs/*.jar app.jar
 
