@@ -30,3 +30,12 @@ app:
     delimiter: ${CSV_STRING_DELIMITER:,}
     max-length: ${CSV_STRING_MAX_LENGTH:200}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

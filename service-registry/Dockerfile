@@ -12,6 +12,8 @@ RUN ./gradlew :service-registry:assemble --no-daemon -x test
 
 FROM eclipse-temurin:25-jre-alpine-3.23 as run
 
+RUN apk add --no-cache curl
+
 WORKDIR /app
 COPY --from=build  /app/service-registry/build/libs/*.jar app.jar
 
