@@ -12,26 +12,32 @@ eureka:
 spring:
   application:
     name: gateway-service
+  config:
+    import: "configserver:"
   cloud:
-    gateway:
-      server:
-        webflux:
-          routes:
-            - id: songModule
-              uri: lb://song-service
-              predicates:
-                - Path=/songs/**
-            - id: resourceService
-              uri: lb://resource-service
-              predicates:
-                - Path=/resources/**
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-  endpoint:
-    health:
-      probes:
+    config:
+      discovery:
         enabled: true
+        service-id: config-service
+#    gateway:
+#      server:
+#        webflux:
+#          routes:
+#            - id: songModule
+#              uri: lb://song-service
+#              predicates:
+#                - Path=/songs/**
+#            - id: resourceService
+#              uri: lb://resource-service
+#              predicates:
+#                - Path=/resources/**
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health
+#  endpoint:
+#    health:
+#      probes:
+#        enabled: true

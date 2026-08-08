@@ -6,7 +6,8 @@ def modules = [
     'service-registry',
     'resource-processor',
     'e2e-tests',
-    'api-gateway'
+    'api-gateway',
+    'configuration-service'
 ]
 
 modules.each { moduleName ->
