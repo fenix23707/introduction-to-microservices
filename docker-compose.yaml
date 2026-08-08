@@ -104,7 +104,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - 9080:8080
+      - 9088:8080
     depends_on:
       - kafka
     environment:
@@ -188,3 +188,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 180s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
+
+    ports:
+      - 9080:9080
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9080/actuator/health/readiness" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    depends_on:
+      song-service:
+        condition: service_healthy
+      resource-service:
+        condition: service_healthy
