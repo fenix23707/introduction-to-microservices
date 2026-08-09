@@ -1,4 +1,4 @@
-package com.epam.gateway.controller;
+package com.epam.gateway;
 
 import java.net.ConnectException;
 import java.util.Collections;
@@ -7,6 +7,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.epam.gateway.dto.ExceptionDto;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import reactor.core.publisher.Mono;
 
 @Order(-2)
 @Component
+@Slf4j
 public class GlobalExceptionHandler implements WebExceptionHandler {
 
     private final Context context;
@@ -56,6 +58,8 @@ public class GlobalExceptionHandler implements WebExceptionHandler {
             message(status),
             Collections.emptyMap()
         );
+
+        log.error("Handling exception: {}", ex.getMessage(), ex);
 
         return ServerResponse.status(status)
             .contentType(MediaType.APPLICATION_JSON)

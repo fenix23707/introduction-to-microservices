@@ -195,6 +195,9 @@ services:
       dockerfile: api-gateway/Dockerfile
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
+      CONFIG_SERVER_URI: http://config-server:8888
+      SONG_SERVICE_URI: lb://song-service
+      RESOURCE_SERVICE_URI: lb://resource-service
 
     ports:
       - 9080:9080
