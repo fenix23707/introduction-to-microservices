@@ -5,7 +5,8 @@ import java.util.Collections;
 
 import com.epam.common.api.song.SongApi;
 import com.epam.common.service.IdsAsCsvParser;
-import com.epam.resource.config.property.KafkaSongProperties;
+import com.epam.resource.config.property.KafkaProperties;
+import com.epam.resource.config.property.KafkaTopicProperties;
 import com.epam.resource.dto.Mp3DeleteResponse;
 import com.epam.resource.dto.Mp3UploadResponse;
 import com.epam.resource.dto.S3Path;
@@ -42,7 +43,7 @@ public class Mp3Service {
     @NonNull
     private final KafkaTemplate<@NonNull String, @NonNull ResourceUploadEvent> kafkaTemplate;
     @NonNull
-    private final KafkaSongProperties kafkaSongProperties;
+    private final KafkaProperties kafkaTopicProperties;
     @NonNull
     private final RetryTemplate kafkaRetryTemplate;
     @NonNull
@@ -55,14 +56,14 @@ public class Mp3Service {
 
         verifyMp3File(bytes);
 
-        var path = fileStorage.save(bytes);
+        var path = fileStorage.saveStaging(bytes);
 
         var entity = new Mp3Entity()
             .setBucket(path.bucket())
             .setObjectKey(path.key());
         mp3Repository.save(entity);
 
-        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(kafkaSongProperties.getName(), new ResourceUploadEvent(entity.getId())));
+        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(kafkaTopicProperties.song().getName(), new ResourceUploadEvent(entity.getId())));
 
         return new Mp3UploadResponse(entity.getId());
     }
@@ -123,4 +124,12 @@ public class Mp3Service {
     }
 
 
+    public void moveToPermanentStorage(Long aLong) {
+
+        var path = mp3Repository.findById(aLong)
+            .map(S3Path::fromEntity)
+            .orElseThrow(() -> new ResourceNotFoundException(aLong));
+
+        fileStorage.moveToPermanentStorage(path);
+    }
 }

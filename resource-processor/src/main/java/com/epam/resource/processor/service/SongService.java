@@ -9,6 +9,8 @@ import com.epam.common.api.resource.ResourceApi;
 import com.epam.common.api.song.SongApi;
 import com.epam.common.dto.kafka.ResourceUploadEvent;
 import com.epam.common.dto.song.SongMetadataDto;
+import com.epam.resource.processor.config.properties.KafkaProperties;
+import com.epam.resource.processor.config.properties.KafkaTopicProperties;
 import com.epam.resource.processor.exception.Mp3FileParseException;
 
 import lombok.NonNull;
@@ -21,6 +23,7 @@ import org.apache.tika.parser.mp3.Mp3Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
@@ -37,12 +40,21 @@ public class SongService {
     @NonNull
     private final RetryTemplate httpRetryTemplate;
 
+    @NonNull
+    private final KafkaTemplate<@NonNull String, @NonNull ResourceUploadEvent> kafkaTemplate;
+    @NonNull
+    private final KafkaProperties kafkaProperties;
+    @NonNull
+    private final RetryTemplate kafkaRetryTemplate;
+
     @KafkaListener(topics = "${application.kafka.topic.song.name}", groupId = "${spring.application.name}")
     @SneakyThrows
     public void handleSongUploadEvent(ResourceUploadEvent event) {
         var bytes = httpRetryTemplate.execute(() -> resourceApi.downloadMp3(String.valueOf(event.resourceId())).getBody());
         var metadata = parseSongMetadata(event.resourceId(), bytes);
         httpRetryTemplate.execute(() -> songApi.createSongMetadata(metadata));
+
+        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(kafkaProperties.songCreated().getName(), new ResourceUploadEvent(event.resourceId())));
     }
 
     @SneakyThrows

@@ -43,7 +43,9 @@ application:
   kafka:
     topic:
       song:
-        name: ${KAFKA_TOPIC_SONG_NAME}
+        name: ${KAFKA_TOPIC_SONG_NAME:songs}
+      song-created:
+        name: ${KAFKA_TOPIC_SONG_CREATED_NAME:song-created}
 
 logging:
   level:

@@ -2,7 +2,8 @@ package com.epam.resource.config;
 
 import java.time.Duration;
 
-import com.epam.resource.config.property.KafkaSongProperties;
+import com.epam.resource.config.property.KafkaProperties;
+import com.epam.resource.config.property.KafkaTopicProperties;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
@@ -11,16 +12,28 @@ import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
 public class KafkaConfig {
 
     @Bean
-    public NewTopic songTopic(KafkaSongProperties kafkaSongProperties) {
-        return TopicBuilder.name(kafkaSongProperties.getName())
+    public NewTopic songTopic(KafkaProperties kafkaTopicProperties) {
+        return TopicBuilder.name(kafkaTopicProperties.song().getName())
                 .partitions(1)
                 .replicas(1)
                 .build();
+    }
+
+    @Bean
+    public NewTopic songCreatedTopic(KafkaProperties kafkaTopicProperties) {
+        return TopicBuilder.name(kafkaTopicProperties.songCreated().getName())
+            .partitions(1)
+            .replicas(1)
+            .build();
     }
 
     @Bean
@@ -32,5 +45,15 @@ public class KafkaConfig {
            .includes(KafkaException.class)
            .build();
        return new RetryTemplate(retryPolicy);
+    }
+
+    @Bean
+    public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
+        var recoverer = new DeadLetterPublishingRecoverer(template);
+        var backoff = new FixedBackOff(2000L, 3);
+        var handler = new DefaultErrorHandler(recoverer, backoff);
+        handler.addNotRetryableExceptions(IllegalArgumentException.class);
+
+        return handler;
     }
 }

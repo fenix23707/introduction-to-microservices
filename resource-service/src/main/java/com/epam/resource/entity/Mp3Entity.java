@@ -34,5 +34,5 @@ public class Mp3Entity {
     private String bucket;
 
     @Column(name = "object_key", nullable = false)
-    private UUID objectKey;
+    private String objectKey;
 }
