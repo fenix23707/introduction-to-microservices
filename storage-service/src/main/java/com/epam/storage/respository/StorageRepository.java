@@ -9,5 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface StorageRepository extends JpaRepository<StorageEntity, Long> {
 
+    boolean existsByBucketAndPath(String bucket, String path);
+
     Optional<StorageEntity> findFirstByStorageTypeOrderByCreatedAtDesc(StorageType storageType);
 }

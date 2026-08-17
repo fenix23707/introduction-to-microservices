@@ -6,7 +6,6 @@ import java.util.Collections;
 import com.epam.common.api.song.SongApi;
 import com.epam.common.service.IdsAsCsvParser;
 import com.epam.resource.config.property.KafkaProperties;
-import com.epam.resource.config.property.KafkaTopicProperties;
 import com.epam.resource.dto.Mp3DeleteResponse;
 import com.epam.resource.dto.Mp3UploadResponse;
 import com.epam.resource.dto.S3Path;

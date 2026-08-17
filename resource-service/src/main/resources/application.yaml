@@ -46,6 +46,24 @@ spring:
         spring.json.trusted.packages: "com.epam.*"
         spring.json.value.default.type: com.epam.resource.dto.kafka.ResourceProcessedEvent
         spring.json.use.type.headers: false
+resilience4j:
+  circuitbreaker:
+    instances:
+      storageService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+#        ignoreExceptions:
+#          - com.epam.*
 eureka:
   instance:
     lease-renewal-interval-in-seconds: 5

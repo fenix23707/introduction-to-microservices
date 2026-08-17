@@ -17,6 +17,7 @@ import com.epam.resource.exception.storage.FileStorageException;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -30,6 +31,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 public class S3Mp3FileStorage implements Mp3FileStorage {
 
     private final S3Client s3Client;
+    @Qualifier("storageClient")
     private final StorageApi storageApi;
 
     @Override

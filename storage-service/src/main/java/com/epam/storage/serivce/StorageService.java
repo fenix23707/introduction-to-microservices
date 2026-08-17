@@ -6,6 +6,7 @@ import com.epam.storage.dto.CreateStorageDto;
 import com.epam.storage.dto.CreateStorageResponseDto;
 import com.epam.storage.dto.StorageDto;
 import com.epam.storage.dto.StorageType;
+import com.epam.storage.exception.StorageAlreadyExistsException;
 import com.epam.storage.exception.StorageNotFound;
 import com.epam.storage.mapper.StorageMapper;
 import com.epam.storage.respository.StorageRepository;
@@ -25,6 +26,10 @@ public class StorageService {
 
     @Transactional
     public CreateStorageResponseDto createStorage(CreateStorageDto createStorageDto) {
+        if (storageRepository.existsByBucketAndPath(createStorageDto.bucket(), createStorageDto.path())) {
+            throw new StorageAlreadyExistsException(createStorageDto.bucket(), createStorageDto.path());
+        }
+
         var entity = storageMapper.toEntity(createStorageDto);
         storageRepository.save(entity);
         s3Service.createBucket(createStorageDto.bucket());

@@ -11,5 +11,5 @@ import org.springframework.web.service.annotation.HttpExchange;
 public interface StorageApi {
 
     @GetExchange("/type/{type}")
-    public StorageDto getStorageByType(@PathVariable("type") StorageType type);
+    StorageDto getStorageByType(@PathVariable("type") StorageType type);
 }

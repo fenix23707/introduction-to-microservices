@@ -12,12 +12,19 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Data
 @Entity
-@Table(name = "storage")
+@Table(
+    name = "storage",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_storage_bucket_path",
+        columnNames = {"bucket", "path"}
+    )
+)
 public class StorageEntity {
 
     @Id
