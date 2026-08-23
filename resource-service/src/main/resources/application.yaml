@@ -103,11 +103,22 @@ management:
     health:
       probes:
         enabled: true
+  opentelemetry:
+    logging:
+      export:
+        otlp:
+          endpoint: ${GRAFANA_URL:http://localhost:4318}/v1/logs
+    tracing:
+      export:
+        otlp:
+          endpoint: ${GRAFANA_URL:http://localhost:4318}/v1/traces
+  otlp:
+    metrics:
+      export:
+        url: ${GRAFANA_URL:http://localhost:4318}/v1/metrics
 
 logging:
   level:
-    org.springframework.boot.context.config: DEBUG
-    org.springframework.retry: DEBUG
-    org.springframework.core.retry: DEBUG
-    org.springframework.resilience: TRACE
-    org.springframework.kafka: DEBUG
+    io.opentelemetry.exporter: DEBUG
+    io.opentelemetry.sdk.logs: DEBUG
+

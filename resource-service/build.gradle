@@ -107,8 +107,12 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-webmvc')
     implementation('org.springframework.boot:spring-boot-starter-kafka')
     implementation('org.springframework.boot:spring-boot-starter-actuator')
+    implementation('org.springframework.boot:spring-boot-starter-opentelemetry')
     implementation('org.springframework.cloud:spring-cloud-starter-netflix-eureka-client')
     implementation('org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j')
+//    implementation('io.micrometer:micrometer-registry-prometheus')
+
+    implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:${opentelemetry_logback_appender_version}")
 
     implementation('software.amazon.awssdk:s3')
 
@@ -118,7 +122,7 @@ dependencies {
 
     runtimeOnly('org.postgresql:postgresql')
 
-   }
+}
 
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")

@@ -3,4 +3,6 @@ apply plugin: 'org.springframework.boot'
 dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
     implementation('org.springframework.boot:spring-boot-starter-actuator')
+    implementation('org.springframework.boot:spring-boot-starter-opentelemetry')
+    implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:${opentelemetry_logback_appender_version}")
 }

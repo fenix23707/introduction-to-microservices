@@ -21,6 +21,8 @@ services:
 
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC_SONG_NAME: ${KAFKA_TOPIC_SONG_NAME}
+
+      GRAFANA_URL: http://grafana:4318
     ports:
       - ${RESOURCE_SERVICE_PORT}:8080
     healthcheck:
@@ -39,6 +41,8 @@ services:
       service-registry:
         condition: service_healthy
       storage-service:
+        condition: service_healthy
+      grafana:
         condition: service_healthy
 
   postgres-resource:
@@ -79,6 +83,7 @@ services:
       AWS_S3_REGION: ${AWS_S3_REGION}
 
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      GRAFANA_URL: http://grafana:4318
     ports:
       - ${STORAGE_SERVICE_PORT}:8085
     healthcheck:
@@ -91,6 +96,8 @@ services:
       postgres-storage:
         condition: service_healthy
       localstack:
+        condition: service_healthy
+      grafana:
         condition: service_healthy
 
   postgres-storage:
@@ -177,6 +184,7 @@ services:
       SONG_POSTGRES_USER: ${SONG_POSTGRES_USER}
       SONG_POSTGRES_PASSWORD: ${SONG_POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
+      GRAFANA_URL: http://grafana:4318
     deploy:
       replicas: 2
 
@@ -192,6 +200,8 @@ services:
       postgres-song:
         condition: service_healthy
       service-registry:
+        condition: service_healthy
+      grafana:
         condition: service_healthy
 
   postgres-song:
@@ -221,6 +231,7 @@ services:
 
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC_SONG_NAME: ${KAFKA_TOPIC_SONG_NAME}
+      GRAFANA_URL: http://grafana:4318
     ports:
       - ${RESOURCE_PROCESSOR_PORT}:8080
     depends_on:
@@ -230,11 +241,15 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      grafana:
+        condition: service_healthy
 
   service-registry:
     build:
       context: .
       dockerfile: service-registry/Dockerfile
+    environment:
+      GRAFANA_URL: http://grafana:4318
     ports:
       - 8761:8761
     healthcheck:
@@ -243,6 +258,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 180s
+    depends_on:
+      grafana:
+        condition: service_healthy
 
   api-gateway:
     build:
@@ -253,6 +271,7 @@ services:
       CONFIG_SERVER_URI: http://config-server:8888
       SONG_SERVICE_URI: lb://song-service
       RESOURCE_SERVICE_URI: lb://resource-service
+      GRAFANA_URL: http://grafana:4318
 
     ports:
       - 9080:9080
@@ -269,6 +288,8 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+      grafana:
+        condition: service_healthy
 
   config-server:
     build:
@@ -277,6 +298,7 @@ services:
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       CONFIG_SERVER_GIT_URI: ${CONFIG_SERVER_GIT_URI}
+      GRAFANA_URL: http://grafana:4318
 
     ports:
       - 8888:8888
@@ -289,3 +311,18 @@ services:
     depends_on:
       service-registry:
         condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  grafana:
+    image: 'grafana/otel-lgtm:0.31.0'
+    ports:
+      - '3000:3000'
+      - '4317:4317'
+      - '4318:4318'
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
