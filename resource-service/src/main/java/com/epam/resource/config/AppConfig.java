@@ -3,6 +3,7 @@ package com.epam.resource.config;
 import java.time.Duration;
 
 import com.epam.common.api.song.SongApi;
+import com.epam.common.api.storage.StorageApi;
 import com.epam.common.config.CommonConfig;
 
 import org.apache.tika.parser.mp3.Mp3Parser;
@@ -20,6 +21,7 @@ import org.springframework.web.service.registry.ImportHttpServices;
 @Configuration
 @Import(CommonConfig.class)
 @ImportHttpServices(group = "song", types = SongApi.class)
+@ImportHttpServices(group = "storage", types = StorageApi.class)
 @EnableDiscoveryClient
 @ConfigurationPropertiesScan
 @EnableResilientMethods

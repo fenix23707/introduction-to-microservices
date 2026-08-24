@@ -61,7 +61,7 @@ public class Mp3UploadSteps {
         uploadedFileBytes = new ClassPathResource("data/" + fileName).getContentAsByteArray();
         uploadedFileContentType = MediaType.parseMediaType("audio/mpeg");
 
-        when(mp3FileStorage.save(any())).thenReturn(new S3Path("test-bucket", UUID.randomUUID()));
+        when(mp3FileStorage.saveStaging(any())).thenReturn(new S3Path("test-bucket", UUID.randomUUID()));
         doAnswer(invocation -> {
             Mp3Entity entity = invocation.getArgument(0);
             entity.setId(STORED_ENTITY_ID);
@@ -85,7 +85,7 @@ public class Mp3UploadSteps {
 
     @Then("the file should be stored in S3")
     public void theFileShouldBeStoredInS3() {
-        verify(mp3FileStorage).save(uploadedFileBytes);
+        verify(mp3FileStorage).saveStaging(uploadedFileBytes);
     }
 
     @Then("the resource metadata should be persisted in the database")

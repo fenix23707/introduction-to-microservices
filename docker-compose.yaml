@@ -1,4 +1,5 @@
 services:
+
   resource-service:
     build:
       context: .
@@ -12,18 +13,18 @@ services:
 
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
 
-      RESOURCE_SERVICE_AWS_S3_ENDPOINT: http://localstack:4566
-      RESOURCE_SERVICE_AWS_S3_BUCKET_NAME: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
-      RESOURCE_SERVICE_AWS_S3_ACCESS_KEY: ${RESOURCE_SERVICE_AWS_S3_ACCESS_KEY}
-      RESOURCE_SERVICE_AWS_S3_SECRET_KEY: ${RESOURCE_SERVICE_AWS_S3_SECRET_KEY}
-      RESOURCE_SERVICE_AWS_S3_REGION: ${RESOURCE_SERVICE_AWS_S3_REGION}
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY}
+      AWS_S3_REGION: ${AWS_S3_REGION}
 
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC_SONG_NAME: ${KAFKA_TOPIC_SONG_NAME}
     ports:
       - ${RESOURCE_SERVICE_PORT}:8080
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${RESOURCE_SERVICE_PORT}/actuator/health/readiness"]
+      test: [ "CMD", "curl", "-f", "http://localhost:${RESOURCE_SERVICE_PORT}/actuator/health/readiness" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,6 +38,8 @@ services:
         condition: service_healthy
       service-registry:
         condition: service_healthy
+      storage-service:
+        condition: service_healthy
 
   postgres-resource:
     image: "postgres:18.3-alpine"
@@ -48,13 +51,65 @@ services:
       POSTGRES_PASSWORD: ${RESOURCE_POSTGRES_PASSWORD}
       POSTGRES_DB: ${RESOURCE_POSTGRES_DB}
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - ./init-scripts/resource-db/:/docker-entrypoint-initdb.d/
+  #      - ./resource-db-data/:/var/lib/postgresql
+
+  storage-service:
+    build:
+      context: .
+      dockerfile: storage-service/Dockerfile
+    environment:
+      STORAGE_POSTGRES_HOST: postgres-storage
+      STORAGE_POSTGRES_PORT: 5432
+      STORAGE_POSTGRES_DB: ${STORAGE_POSTGRES_DB}
+      STORAGE_POSTGRES_USER: ${STORAGE_POSTGRES_USER}
+      STORAGE_POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
+
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
+
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY}
+      AWS_S3_REGION: ${AWS_S3_REGION}
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - ${STORAGE_SERVICE_PORT}:8085
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:${STORAGE_SERVICE_PORT}/actuator/health/readiness" ]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 180s
+    depends_on:
+      postgres-storage:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  postgres-storage:
+    image: "postgres:18.3-alpine"
+    ports:
+      - ${STORAGE_POSTGRES_PORT}:5432
+
+    environment:
+      POSTGRES_USER: ${STORAGE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${STORAGE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${STORAGE_POSTGRES_DB}
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     volumes:
-      - ./init-scripts/resource-db/:/docker-entrypoint-initdb.d/
-#      - ./resource-db-data/:/var/lib/postgresql
+      - ./init-scripts/storage-db/:/docker-entrypoint-initdb.d/
+
 
   localstack:
     image: localstack/localstack:community-archive
@@ -62,18 +117,18 @@ services:
       - "4566:4566"
     environment:
       SERVICES: s3
-      AWS_ACCESS_KEY_ID: ${RESOURCE_SERVICE_AWS_S3_ACCESS_KEY}
-      AWS_SECRET_ACCESS_KEY: ${RESOURCE_SERVICE_AWS_S3_SECRET_KEY}
-      AWS_DEFAULT_REGION: ${RESOURCE_SERVICE_AWS_S3_REGION}
-      RESOURCE_SERVICE_AWS_S3_BUCKET_NAME: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${AWS_S3_SECRET_KEY}
+      AWS_DEFAULT_REGION: ${AWS_S3_REGION}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
     healthcheck:
-      test: [ "CMD", "awslocal", "s3api", "wait", "bucket-exists", "--bucket", "${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}" ]
+      test: [ "CMD", "awslocal", "s3api", "wait", "bucket-exists", "--bucket", "${AWS_S3_BUCKET_NAME}" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 15
 
     volumes:
-#      - ./localstack_data:/var/lib/localstack
+      #      - ./localstack_data:/var/lib/localstack
       - ./init-scripts/localstack:/etc/localstack/init/ready.d
 
   kafka:
@@ -96,8 +151,8 @@ services:
       CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
     healthcheck:
       test: [ "CMD", "/opt/kafka/bin/kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092" ]
-      interval: 30s
-      retries: 5
+      interval: 20s
+      retries: 15
       timeout: 10s
 
   kafka-ui:
@@ -128,7 +183,7 @@ services:
     ports:
       - 8082-8083:8080
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -152,10 +207,10 @@ services:
       test: [ "CMD", "pg_isready", "-U", "postgres" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 15
     volumes:
       - ./init-scripts/song-db/:/docker-entrypoint-initdb.d/
-#      - ./song-db-data/:/var/lib/postgresql
+  #      - ./song-db-data/:/var/lib/postgresql
 
   resource-processor:
     build:

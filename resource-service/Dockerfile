@@ -3,7 +3,7 @@ FROM gradle:9.5.0-jdk25-alpine AS build
 WORKDIR /app
 
 COPY gradle gradle
-COPY build.gradle settings.gradle gradle.properties gradlew ./
+COPY build.gradle settings.gradle gradle.properties gradlew lombok.config ./
 
 COPY resource-service/build.gradle resource-service/
 RUN ./gradlew :resource-service:dependencies --no-daemon -Dorg.gradle.jvmargs="-Djava.net.preferIPv4Stack=true" -Dhttp.socketTimeout=120000 -Dhttp.connectionTimeout=120000

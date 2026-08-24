@@ -24,6 +24,8 @@ spring:
         group:
           song:
             base-url: http://song-service
+          storage:
+            base-url: http://storage-service
   jackson:
     stream-write-features:
       write-numbers-as-strings: true
@@ -35,6 +37,33 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.epam.*"
+        spring.json.value.default.type: com.epam.resource.dto.kafka.ResourceProcessedEvent
+        spring.json.use.type.headers: false
+resilience4j:
+  circuitbreaker:
+    instances:
+      storageService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+#        ignoreExceptions:
+#          - com.epam.*
 eureka:
   instance:
     lease-renewal-interval-in-seconds: 5
@@ -51,17 +80,19 @@ app:
 
 aws:
   s3:
-    access-key: ${RESOURCE_SERVICE_AWS_S3_ACCESS_KEY}
-    secret-key: ${RESOURCE_SERVICE_AWS_S3_SECRET_KEY}
-    endpoint: ${RESOURCE_SERVICE_AWS_S3_ENDPOINT:http://localhost:4566}
-    region: ${RESOURCE_SERVICE_AWS_S3_REGION:us-east-1}
-    bucket-name: ${RESOURCE_SERVICE_AWS_S3_BUCKET_NAME}
+    access-key: ${AWS_S3_ACCESS_KEY}
+    secret-key: ${AWS_S3_SECRET_KEY}
+    endpoint: ${AWS_S3_ENDPOINT:http://localhost:4566}
+    region: ${AWS_S3_REGION:us-east-1}
+    bucket-name: ${AWS_S3_BUCKET_NAME}
 
 application:
   kafka:
     topic:
       song:
         name: ${KAFKA_TOPIC_SONG_NAME:songs}
+      song-created:
+        name: ${KAFKA_TOPIC_SONG_CREATED_NAME:song-created}
 
 management:
   endpoints:
