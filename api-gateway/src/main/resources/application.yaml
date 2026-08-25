@@ -12,6 +12,8 @@ eureka:
 spring:
   application:
     name: gateway-service
+  reactor:
+    context-propagation: AUTO
   config:
     import:
       - "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
@@ -20,6 +22,8 @@ spring:
     gateway:
       server:
         webflux:
+          metrics:
+            enabled: true
           routes:
             - id: songModule
               uri: ${SONG_SERVICE_URI:http://localhost:${SONG_SERVICE_PORT:8081}}
@@ -52,6 +56,11 @@ management:
     metrics:
       export:
         url: ${GRAFANA_URL:http://localhost:4318}/v1/metrics
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
 
 logging:
   level:

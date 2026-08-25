@@ -26,6 +26,10 @@ spring:
             base-url: http://song-service
           storage:
             base-url: http://storage-service
+  cloud:
+    circuitbreaker:
+      http-services:
+        enabled: false
   jackson:
     stream-write-features:
       write-numbers-as-strings: true
@@ -46,6 +50,10 @@ spring:
         spring.json.trusted.packages: "com.epam.*"
         spring.json.value.default.type: com.epam.resource.dto.kafka.ResourceProcessedEvent
         spring.json.use.type.headers: false
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
 resilience4j:
   circuitbreaker:
     instances:
@@ -64,6 +72,7 @@ resilience4j:
           - java.io.IOException
 #        ignoreExceptions:
 #          - com.epam.*
+
 eureka:
   instance:
     lease-renewal-interval-in-seconds: 5
@@ -116,9 +125,14 @@ management:
     metrics:
       export:
         url: ${GRAFANA_URL:http://localhost:4318}/v1/metrics
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
 
 logging:
   level:
-    io.opentelemetry.exporter: DEBUG
-    io.opentelemetry.sdk.logs: DEBUG
-
+    com.epam: INFO
+    org.springframework.boot.actuator.autoconfigure.opentelemetry: DEBUG
+    org.springframework.boot.docker.compose: DEBUG
