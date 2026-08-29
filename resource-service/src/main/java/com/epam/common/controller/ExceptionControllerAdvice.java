@@ -2,11 +2,15 @@ package com.epam.common.controller;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.epam.common.dto.ExceptionDto;
 import com.epam.common.exception.BaseApplicationException;
+import com.epam.resource.config.TraceIdConfig;
 
+import io.micrometer.tracing.Tracer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,9 +20,12 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+@RequiredArgsConstructor
 @Slf4j
 @ControllerAdvice
 public class ExceptionControllerAdvice {
+
+    private final Tracer tracer;
 
     private static final Map<MediaType, String> MEDIA_TYPE_TO_SIMPLE_NAME = Map.of(
         MediaType.parseMediaType("audio/mpeg"), "MP3",
@@ -80,8 +87,16 @@ public class ExceptionControllerAdvice {
             details
         );
 
-        return ResponseEntity
-            .status(statusCode)
+        var response = ResponseEntity
+            .status(statusCode);
+
+        var traceId = Optional.ofNullable(tracer.currentSpan())
+            .map(span -> span.context().traceId());
+        if (traceId.isPresent()) {
+            response = response.header(TraceIdConfig.X_TRACE_ID, traceId.get());
+        }
+
+        return response
             .body(body);
     }
 }

@@ -12,6 +12,8 @@ eureka:
 spring:
   application:
     name: gateway-service
+  reactor:
+    context-propagation: AUTO
   config:
     import:
       - "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
@@ -20,6 +22,8 @@ spring:
     gateway:
       server:
         webflux:
+          metrics:
+            enabled: true
           routes:
             - id: songModule
               uri: ${SONG_SERVICE_URI:http://localhost:${SONG_SERVICE_PORT:8081}}
@@ -29,3 +33,36 @@ spring:
               uri: ${RESOURCE_SERVICE_URI:http://localhost:${RESOURCE_SERVICE_PORT:8080}}
               predicates:
                 - Path=/resources/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  opentelemetry:
+    logging:
+      export:
+        otlp:
+          endpoint: ${GRAFANA_URL:http://localhost:4318}/v1/logs
+    tracing:
+      export:
+        otlp:
+          endpoint: ${GRAFANA_URL:http://localhost:4318}/v1/traces
+  otlp:
+    metrics:
+      export:
+        url: ${GRAFANA_URL:http://localhost:4318}/v1/metrics
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+
+logging:
+  level:
+    io.opentelemetry.exporter: DEBUG
+    io.opentelemetry.sdk.logs: DEBUG

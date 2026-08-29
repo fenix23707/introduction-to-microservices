@@ -1,6 +1,8 @@
 server:
   port: 8761
-
+spring:
+  application:
+    name: service-registry
 eureka:
   client:
     register-with-eureka: false
@@ -15,6 +17,19 @@ management:
     health:
       probes:
         enabled: true
+  opentelemetry:
+    logging:
+      export:
+        otlp:
+          endpoint: ${GRAFANA_URL:http://localhost:4318}/v1/logs
+    tracing:
+      export:
+        otlp:
+          endpoint: ${GRAFANA_URL:http://localhost:4318}/v1/traces
+  otlp:
+    metrics:
+      export:
+        url: ${GRAFANA_URL:http://localhost:4318}/v1/metrics
 
 logging:
   level:
@@ -22,3 +37,5 @@ logging:
       netflix:
         eureka: OFF
         discovery: OFF
+    io.opentelemetry.exporter: DEBUG
+    io.opentelemetry.sdk.logs: DEBUG

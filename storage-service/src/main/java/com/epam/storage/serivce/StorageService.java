@@ -12,10 +12,12 @@ import com.epam.storage.mapper.StorageMapper;
 import com.epam.storage.respository.StorageRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
+@Slf4j
 @Service
 public class StorageService {
 
@@ -45,6 +47,7 @@ public class StorageService {
 
     @Transactional(readOnly = true)
     public StorageDto getStorageByType(StorageType type) {
+        log.info("get storage by type {}", type);
         return storageRepository.findFirstByStorageTypeOrderByCreatedAtDesc(type)
                 .map(storageMapper::toDto)
                 .orElseThrow(() -> StorageNotFound.byType(type));
