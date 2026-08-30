@@ -6,6 +6,7 @@ spring:
   config:
     import:
       - optional:file:.env[.properties]
+      - optional:file:.env.secret[.properties]
   #      - optional:file:../.env[.properties]
   jpa:
     database: POSTGRESQL
@@ -17,6 +18,12 @@ spring:
     url: jdbc:postgresql://${STORAGE_POSTGRES_HOST}:${STORAGE_POSTGRES_PORT}/${STORAGE_POSTGRES_DB}?sslmode=disable
     username: ${STORAGE_POSTGRES_USER}
     password: ${STORAGE_POSTGRES_PASSWORD}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:7080/realms/microservices/protocol/openid-connect/certs
+          issuer-uri: http://localhost:7080/realms/microservices
 eureka:
   instance:
     lease-renewal-interval-in-seconds: 5

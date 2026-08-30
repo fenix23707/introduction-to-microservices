@@ -7,6 +7,13 @@ spring:
     import:
       - optional:file:.env[.properties]
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:7080/realms/microservices/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:7080}/realms/microservices
+
   http:
     client:
       service:

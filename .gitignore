@@ -40,3 +40,4 @@ out/
 #.env shpuldn't be commited but currentty it contains only example values, so we can keep it in the repo
 
 **/*-db-data/
+.env.secret

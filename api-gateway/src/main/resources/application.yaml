@@ -18,6 +18,7 @@ spring:
     import:
       - "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
       - "optional:file:.env[.properties]"
+
   cloud:
     gateway:
       server:
@@ -33,6 +34,16 @@ spring:
               uri: ${RESOURCE_SERVICE_URI:http://localhost:${RESOURCE_SERVICE_PORT:8080}}
               predicates:
                 - Path=/resources/**
+            - id: storageService
+              uri: ${STORAGE_SERVICE_URI:http://localhost:${STORAGE_SERVICE_PORT:8080}}
+              predicates:
+                - Path=/storages/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:7080/realms/microservices/protocol/openid-connect/certs
+          issuer-uri: http://localhost:7080/realms/microservices
 
 management:
   endpoints:
