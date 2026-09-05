@@ -1,5 +1,6 @@
 package com.epam.e2e;
 
+import com.epam.e2e.client.KeycloakTokenProvider;
 import com.epam.e2e.config.property.E2eServicesProperties;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,9 +19,13 @@ public class E2eTestApplication {
     }
 
     @Bean
-    public RestClient resourceServiceClient(E2eServicesProperties properties) {
+    public RestClient resourceServiceClient(E2eServicesProperties properties, KeycloakTokenProvider tokenProvider) {
         return RestClient.builder()
             .baseUrl(properties.resourceService().baseUrl())
+            .requestInterceptor((request, body, execution) -> {
+                request.getHeaders().setBearerAuth(tokenProvider.getAccessToken());
+                return execution.execute(request, body);
+            })
             .build();
     }
 
