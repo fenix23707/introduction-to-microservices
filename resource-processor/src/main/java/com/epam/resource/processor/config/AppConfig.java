@@ -6,6 +6,7 @@ import com.epam.common.api.resource.ResourceApi;
 import com.epam.common.api.song.SongApi;
 
 import org.apache.tika.parser.mp3.Mp3Parser;
+import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.resilience.annotation.EnableResilientMethods;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.service.registry.ImportHttpServices;
 
@@ -23,6 +26,18 @@ import org.springframework.web.service.registry.ImportHttpServices;
 @EnableResilientMethods
 @ConfigurationPropertiesScan
 public class AppConfig {
+
+
+    @Bean
+    public RestClientCustomizer bearerTokenRelayCustomizer() {
+        return builder -> builder.requestInterceptor((request, body, execution) -> {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth instanceof JwtAuthenticationToken jwtAuth) {
+                request.getHeaders().setBearerAuth(jwtAuth.getToken().getTokenValue());
+            }
+            return execution.execute(request, body);
+        });
+    }
 
     @Bean
     public Mp3Parser mp3Parser() {

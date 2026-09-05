@@ -23,6 +23,8 @@ services:
       KAFKA_TOPIC_SONG_NAME: ${KAFKA_TOPIC_SONG_NAME}
 
       GRAFANA_URL: http://grafana:4318
+      KEYCLOAK_HOST: keycloak
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:7080/realms/microservices
     ports:
       - ${RESOURCE_SERVICE_PORT}:8080
     healthcheck:
@@ -84,6 +86,7 @@ services:
 
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       GRAFANA_URL: http://grafana:4318
+      KEYCLOAK_HOST: keycloak
     ports:
       - ${STORAGE_SERVICE_PORT}:8085
     healthcheck:
@@ -96,6 +99,8 @@ services:
       postgres-storage:
         condition: service_healthy
       localstack:
+        condition: service_healthy
+      service-registry:
         condition: service_healthy
       grafana:
         condition: service_healthy
@@ -132,7 +137,7 @@ services:
       test: [ "CMD", "awslocal", "s3api", "wait", "bucket-exists", "--bucket", "${AWS_S3_BUCKET_NAME}" ]
       interval: 10s
       timeout: 5s
-      retries: 15
+      retries: 25
 
     volumes:
       #      - ./localstack_data:/var/lib/localstack
@@ -159,7 +164,7 @@ services:
     healthcheck:
       test: [ "CMD", "/opt/kafka/bin/kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092" ]
       interval: 20s
-      retries: 15
+      retries: 25
       timeout: 10s
 
   kafka-ui:
@@ -232,6 +237,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC_SONG_NAME: ${KAFKA_TOPIC_SONG_NAME}
       GRAFANA_URL: http://grafana:4318
+      KEYCLOAK_HOST: keycloak
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:7080/realms/microservices
     ports:
       - ${RESOURCE_PROCESSOR_PORT}:8080
     depends_on:
@@ -271,8 +278,10 @@ services:
       CONFIG_SERVER_URI: http://config-server:8888
       SONG_SERVICE_URI: lb://song-service
       RESOURCE_SERVICE_URI: lb://resource-service
+      STORAGE_SERVICE_URI: lb://storage-service
       GRAFANA_URL: http://grafana:4318
-
+      KC_CLIENT_SECRET: ${KC_CLIENT_SECRET}
+      KEYCLOAK_HOST: keycloak
     ports:
       - 9080:9080
     healthcheck:
@@ -286,7 +295,11 @@ services:
         condition: service_healthy
       resource-service:
         condition: service_healthy
+      storage-service:
+        condition: service_healthy
       config-server:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
       grafana:
         condition: service_healthy
@@ -324,5 +337,30 @@ services:
       test: [ "CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 15
+      retries: 25
+      start_period: 60s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 7080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+      KC_LOG_LEVEL: info
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      CLIENT_SECRET: ${KC_CLIENT_SECRET}
+    command: [ "start-dev", "--http-port", "7080", "--https-port", "7443", "--import-realm" ]
+    ports:
+      - "7080:7080"
+      - "7443:7443"
+    volumes:
+      - ./init-scripts/keycloak:/opt/keycloak/data/import   # realm auto-import on startup
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 15s
+      timeout: 5s
+      retries: 25
       start_period: 60s

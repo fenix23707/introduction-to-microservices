@@ -30,6 +30,13 @@ spring:
     circuitbreaker:
       http-services:
         enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:7080/realms/microservices/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:7080}/realms/microservices
+
   jackson:
     stream-write-features:
       write-numbers-as-strings: true

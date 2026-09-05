@@ -1,6 +1,7 @@
 package com.epam.resource.service;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import com.epam.common.api.song.SongApi;
@@ -21,9 +22,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.tika.Tika;
 import org.springframework.core.retry.RetryTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +67,7 @@ public class Mp3Service {
             .setObjectKey(path.key());
         mp3Repository.save(entity);
 
-        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(kafkaTopicProperties.song().getName(), new ResourceUploadEvent(entity.getId())));
+        kafkaRetryTemplate.invoke(() -> kafkaTemplate.send(buildRecordWithBearer(kafkaTopicProperties.song().getName(), new ResourceUploadEvent(entity.getId()))));
 
         return new Mp3UploadResponse(entity.getId());
     }
@@ -122,6 +127,17 @@ public class Mp3Service {
         return new Mp3DeleteResponse(deletedIds);
     }
 
+    private ProducerRecord<String, ResourceUploadEvent> buildRecordWithBearer(String topic, ResourceUploadEvent event) {
+        var record = new ProducerRecord<String, ResourceUploadEvent>(topic, event);
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            record.headers().add(
+                HttpHeaders.AUTHORIZATION,
+                ("Bearer " + jwtAuth.getToken().getTokenValue()).getBytes(StandardCharsets.UTF_8)
+            );
+        }
+        return record;
+    }
 
     public void moveToPermanentStorage(Long aLong) {
 

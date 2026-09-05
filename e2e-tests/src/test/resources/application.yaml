@@ -14,6 +14,10 @@ e2e:
     base-url: ${E2E_RESOURCE_SERVICE_BASE_URL:http://localhost:${RESOURCE_SERVICE_PORT:8080}}
   song-service:
     base-url: ${E2E_SONG_SERVICE_BASE_URL:http://localhost:${SONG_SERVICE_PORT:8081}}
+  keycloak:
+    token-uri: ${E2E_KEYCLOAK_TOKEN_URI:http://localhost:7080/realms/microservices/protocol/openid-connect/token}
+    client-id: ${KC_CLIENT_ID:postman}
+    client-secret: ${KC_CLIENT_SECRET}
 
 logging:
   level:
